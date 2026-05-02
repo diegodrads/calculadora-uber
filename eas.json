@@ -10,10 +10,21 @@
     },
     "preview": {
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "env": {
+        "GRADLE_OPTS": "-Xmx6g -XX:MaxMetaspaceSize=1g"
       }
     },
-    "production": {}
+    "production": {
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "GRADLE_OPTS": "-Xmx6g -XX:MaxMetaspaceSize=1g"
+      }
+    }
   },
   "submit": {
     "production": {}
