@@ -1,9 +1,14 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import CardResumo, { CardResumoSimples, CardValor } from '../components/Cards';
+import CardResumo, { CardResumoSimples, CardHero, CardStat, CardProgress, SectionTitle } from '../components/Cards';
 import { listarRegistros, listarMetas, listarDividas, listarConfig } from '../storage/database';
-import { formatarMoeda, resumoPorMes, primeiroDiaMes, ultimoDiaMes, dataHoje } from '../utils/helpers';
+import { formatarMoeda } from '../utils/helpers';
+
+const MESES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+];
 
 export default function DashboardScreen() {
   const [registros, setRegistros] = useState([]);
@@ -23,13 +28,11 @@ export default function DashboardScreen() {
     const custoVariavelTotal = registrosMes.reduce((s, r) => s + (r.custoVariavel || 0), 0);
     const custoCombustivelTotal = registrosMes.reduce((s, r) => s + (r.custoCombustivel || 0), 0);
 
-    // Aluguel: soma o que foi lançado por corrida + aplica config se necessário
     const custoAluguelRegistros = registrosMes.reduce((s, r) => s + (r.custoAluguel || 0), 0);
     const diasComRegistro = new Set(registrosMes.map((r) => r.data)).size;
     const custoAluguelConfig = config.valorAluguel || 0;
     const tipoAluguel = config.tipoAluguel || 'mensal';
 
-    // Se o usuário configurou aluguel mas não lançou por corrida, calcula automaticamente
     let custoAluguelTotal = custoAluguelRegistros;
     if (custoAluguelRegistros === 0 && custoAluguelConfig > 0 && diasComRegistro > 0) {
       if (tipoAluguel === 'mensal') {
@@ -42,11 +45,7 @@ export default function DashboardScreen() {
 
     const custoTotalPeriodo = custoVariavelTotal + custoCombustivelTotal + custoAluguelTotal;
     const lucroLiquido = receitaTotal - custoTotalPeriodo;
-
-    // Custo por km
     const custoPorKm = kmTotal > 0 ? custoTotalPeriodo / kmTotal : 0;
-
-    // Meta líquida
     const metaAtiva = metas.find((m) => m.ativa !== false);
 
     return {
@@ -61,6 +60,7 @@ export default function DashboardScreen() {
       custoPorKm,
       metaAtiva,
       registrosMes,
+      diasComRegistro,
     };
   }
 
@@ -89,70 +89,116 @@ export default function DashboardScreen() {
 
   const resumo = calcularResumo();
   const totalDividas = dividas.reduce((s, d) => s + (d.valorRestante || d.valorOriginal || 0), 0);
+  const hoje = new Date();
+  const nomeMes = MESES[hoje.getMonth()];
+  const anoAtual = hoje.getFullYear();
+
+  const progresso =
+    resumo.metaAtiva && resumo.metaAtiva.valorMensal > 0
+      ? (resumo.lucroLiquido / resumo.metaAtiva.valorMensal) * 100
+      : 0;
 
   return (
     <ScrollView
       style={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      contentContainerStyle={styles.content}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6C63FF" />}
     >
-      <Text style={styles.saudacao}>📊 Dashboard</Text>
-
-      <CardValor label="Receita Bruta do Mês" valor={resumo.receitaTotal} cor="#2E7D32" />
-      <CardValor label="Lucro Líquido" valor={resumo.lucroLiquido} cor={resumo.lucroLiquido >= 0 ? '#2E7D32' : '#e53935'} />
-
-      <View style={styles.grid}>
-        <View style={styles.gridItem}>
-          <CardResumoSimples titulo="Km Rodados" valor={resumo.kmTotal} unidade="km" cor="#FF6F00" />
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerSub}>Resumo do mês</Text>
+          <Text style={styles.headerMes}>{nomeMes} {anoAtual}</Text>
         </View>
-        <View style={styles.gridItem}>
-          <CardResumoSimples titulo="Horas Trabalhadas" valor={resumo.horasTotal} unidade="h" cor="#1565C0" />
+        <View style={styles.headerBadge}>
+          <Text style={styles.headerBadgeText}>{resumo.diasComRegistro}d</Text>
         </View>
       </View>
 
-      <View style={styles.grid}>
+      {/* Hero metrics */}
+      <View style={styles.heroRow}>
+        <CardHero
+          label="Receita Bruta"
+          valor={resumo.receitaTotal}
+          icon="💰"
+          cor="#16A34A"
+        />
+        <CardHero
+          label="Lucro Líquido"
+          valor={resumo.lucroLiquido}
+          icon="📈"
+          cor={resumo.lucroLiquido >= 0 ? '#16A34A' : '#DC2626'}
+        />
+      </View>
+
+      {/* Quick stats */}
+      <View style={styles.statsRow}>
+        <CardStat icon="🛣️" label="Km Rodados" valor={`${resumo.kmTotal} km`} cor="#D97706" />
+        <CardStat icon="⏱️" label="Horas" valor={`${resumo.horasTotal} h`} cor="#2563EB" />
+        <CardStat icon="📅" label="Dias" valor={`${resumo.diasComRegistro}`} cor="#7C3AED" />
+      </View>
+
+      {/* Custos */}
+      <SectionTitle>Custos do Mês</SectionTitle>
+
+      <View style={styles.gridRow}>
         <View style={styles.gridItem}>
-          <CardResumo titulo="Custo Variável" valor={resumo.custoVariavelTotal} cor="#e53935" />
+          <CardResumo titulo="Custo Variável" valor={resumo.custoVariavelTotal} cor="#DC2626" />
         </View>
         <View style={styles.gridItem}>
-          <CardResumo titulo="Combustível" valor={resumo.custoCombustivelTotal} cor="#FF6F00" />
+          <CardResumo titulo="Combustível" valor={resumo.custoCombustivelTotal} cor="#D97706" />
         </View>
       </View>
 
       {resumo.custoAluguelTotal > 0 && (
-        <CardResumo titulo="Aluguel do Carro" valor={resumo.custoAluguelTotal} cor="#9C27B0" />
+        <CardResumo titulo="Aluguel do Carro" valor={resumo.custoAluguelTotal} cor="#7C3AED" />
       )}
 
-      <CardResumo
-        titulo="Custo Total do Período"
-        valor={resumo.custoTotalPeriodo}
-        cor="#e53935"
-      />
+      <CardResumo titulo="Custo Total do Período" valor={resumo.custoTotalPeriodo} cor="#DC2626" />
 
-      <CardResumoSimples
-        titulo="Custo por Km Rodado"
-        valor={resumo.custoPorKm}
-        unidade="R$/km"
-        cor="#E91E63"
-      />
-
-      {totalDividas > 0 && (
-        <CardResumo titulo="Total em Dívidas" valor={totalDividas} cor="#D32F2F" />
-      )}
-
-      {resumo.metaAtiva && (
+      {resumo.kmTotal > 0 && (
         <CardResumoSimples
-          titulo={`Progresso Meta: ${resumo.metaAtiva.nome || 'Sem nome'}`}
-          valor={resumo.metaAtiva.valorMensal > 0 ? (resumo.lucroLiquido / resumo.metaAtiva.valorMensal) * 100 : 0}
-          unidade="%"
-          cor="#6C63FF"
+          titulo="Custo por Km Rodado"
+          valor={parseFloat(resumo.custoPorKm.toFixed(2))}
+          unidade="R$/km"
+          cor="#DB2777"
         />
       )}
 
-      {resumo.registrosMes.length === 0 && (
-        <Text style={styles.vazio}>
-          Nenhum registro no mês atual. Adicione registros de corridas na aba "Registrar".
-        </Text>
+      {/* Meta */}
+      {resumo.metaAtiva && (
+        <>
+          <SectionTitle>Progresso da Meta</SectionTitle>
+          <CardProgress
+            titulo={resumo.metaAtiva.nome || 'Meta do Mês'}
+            progresso={progresso}
+            meta={resumo.metaAtiva.valorMensal}
+            atual={resumo.lucroLiquido}
+            cor="#6C63FF"
+          />
+        </>
       )}
+
+      {/* Dívidas */}
+      {totalDividas > 0 && (
+        <>
+          <SectionTitle>Dívidas</SectionTitle>
+          <CardResumo titulo="Total em Dívidas" valor={totalDividas} cor="#DC2626" />
+        </>
+      )}
+
+      {/* Estado vazio */}
+      {resumo.registrosMes.length === 0 && (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyIcon}>🚗</Text>
+          <Text style={styles.emptyTitulo}>Nenhum registro este mês</Text>
+          <Text style={styles.emptyTexto}>
+            Adicione registros de corridas na aba "Registrar" para ver o resumo aqui.
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.bottomSpacer} />
     </ScrollView>
   );
 }
@@ -160,27 +206,82 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f5',
+    backgroundColor: '#F4F6FB',
+  },
+  content: {
     padding: 16,
   },
-  saudacao: {
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingTop: 4,
+  },
+  headerSub: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  headerMes: {
     fontSize: 22,
+    fontWeight: '800',
+    color: '#1E1B4B',
+    letterSpacing: -0.3,
+  },
+  headerBadge: {
+    backgroundColor: '#6C63FF',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  headerBadgeText: {
+    color: '#fff',
+    fontSize: 13,
     fontWeight: '700',
-    color: '#333',
+  },
+  heroRow: {
+    flexDirection: 'row',
+    marginHorizontal: -4,
     marginBottom: 8,
   },
-  grid: {
+  statsRow: {
+    flexDirection: 'row',
+    marginHorizontal: -3,
+    marginTop: 8,
+  },
+  gridRow: {
     flexDirection: 'row',
     gap: 8,
   },
   gridItem: {
     flex: 1,
   },
-  vazio: {
+  emptyState: {
+    alignItems: 'center',
+    marginTop: 32,
+    paddingHorizontal: 24,
+  },
+  emptyIcon: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyTitulo: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E1B4B',
+    marginBottom: 6,
+  },
+  emptyTexto: {
     textAlign: 'center',
-    color: '#999',
-    marginTop: 24,
+    color: '#64748B',
     fontSize: 14,
     lineHeight: 20,
+  },
+  bottomSpacer: {
+    height: 16,
   },
 });
