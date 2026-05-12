@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import InputForm from '../components/InputForm';
 import Botao from '../components/Botao';
@@ -10,17 +10,14 @@ export default function MetasDividasScreen() {
   const [metas, setMetas] = useState([]);
   const [dividas, setDividas] = useState([]);
 
-  // Meta
   const [metaNome, setMetaNome] = useState('');
   const [metaValor, setMetaValor] = useState('');
 
-  // Dívida
   const [dividaNome, setDividaNome] = useState('');
   const [dividaValor, setDividaValor] = useState('');
   const [dividaJuros, setDividaJuros] = useState('');
   const [dividaData, setDividaData] = useState('');
 
-  // Calculadora de custo km
   const [precoCombustivel, setPrecoCombustivel] = useState('');
   const [kmPorLitro, setKmPorLitro] = useState('');
   const [custoCalculado, setCustoCalculado] = useState(null);
@@ -36,7 +33,6 @@ export default function MetasDividasScreen() {
     setDividas(await listarDividas());
   }
 
-  // ===== Metas =====
   async function handleSalvarMeta() {
     if (!metaNome || !metaValor) {
       Alert.alert('Atenção', 'Preencha nome e valor da meta.');
@@ -62,7 +58,6 @@ export default function MetasDividasScreen() {
     ]);
   }
 
-  // ===== Dívidas =====
   async function handleSalvarDivida() {
     if (!dividaNome || !dividaValor) {
       Alert.alert('Atenção', 'Preencha nome e valor da dívida.');
@@ -110,49 +105,87 @@ export default function MetasDividasScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+
       {/* Calculadora de Custo por Km */}
-      <View style={styles.secao}>
-        <Text style={styles.tituloSecao}>⛽ Custo por Km</Text>
-        <InputForm label="Preço Combustível (R$/L)" value={precoCombustivel} onChangeText={setPrecoCombustivel} keyboardType="decimal-pad" />
-        <InputForm label="Km por Litro" value={kmPorLitro} onChangeText={setKmPorLitro} keyboardType="decimal-pad" />
-        <Botao titulo="Calcular Custo por Km" onPress={handleCalcularCustoKm} cor="#FF6F00" />
+      <View style={styles.secaoCard}>
+        <View style={styles.secaoHeader}>
+          <Text style={styles.secaoIcon}>⛽</Text>
+          <Text style={styles.secaoTitulo}>Custo por Km</Text>
+        </View>
+        <View style={styles.row}>
+          <View style={styles.rowItem}>
+            <InputForm label="Preço (R$/L)" value={precoCombustivel} onChangeText={setPrecoCombustivel} keyboardType="decimal-pad" />
+          </View>
+          <View style={styles.rowItem}>
+            <InputForm label="Km por Litro" value={kmPorLitro} onChangeText={setKmPorLitro} keyboardType="decimal-pad" />
+          </View>
+        </View>
+        <Botao titulo="Calcular" onPress={handleCalcularCustoKm} cor="#D97706" />
         {custoCalculado !== null && (
           <View style={styles.resultBox}>
-            <Text style={styles.resultText}>
-              Custo: R$ {custoCalculado.toFixed(2)} / km
-            </Text>
+            <Text style={styles.resultLabel}>Custo por km</Text>
+            <Text style={styles.resultValor}>R$ {custoCalculado.toFixed(2)}/km</Text>
           </View>
         )}
       </View>
 
       {/* Metas */}
-      <View style={styles.secao}>
-        <Text style={styles.tituloSecao}>🎯 Metas</Text>
-        <InputForm label="Nome da Meta" value={metaNome} onChangeText={setMetaNome} />
-        <InputForm label="Valor Mensal (R$)" value={metaValor} onChangeText={setMetaValor} keyboardType="decimal-pad" />
+      <View style={styles.secaoCard}>
+        <View style={styles.secaoHeader}>
+          <Text style={styles.secaoIcon}>🎯</Text>
+          <Text style={styles.secaoTitulo}>Metas</Text>
+        </View>
+        <View style={styles.row}>
+          <View style={styles.rowItem}>
+            <InputForm label="Nome" value={metaNome} onChangeText={setMetaNome} />
+          </View>
+          <View style={styles.rowItem}>
+            <InputForm label="Valor Mensal (R$)" value={metaValor} onChangeText={setMetaValor} keyboardType="decimal-pad" />
+          </View>
+        </View>
         <Botao titulo="Adicionar Meta" onPress={handleSalvarMeta} cor="#6C63FF" />
 
+        {metas.length > 0 && <View style={styles.divider} />}
         {metas.map((m) => (
           <View key={m.id} style={styles.itemLista}>
-            <View>
+            <View style={[styles.itemIndicador, { backgroundColor: '#6C63FF' }]} />
+            <View style={styles.itemCorpo}>
               <Text style={styles.itemNome}>{m.nome || 'Meta'}</Text>
               <Text style={styles.itemValor}>{formatarMoeda(m.valorMensal)}/mês</Text>
             </View>
-            <Botao titulo="×" onPress={() => handleDeletarMeta(m.id)} cor="#e53935" />
+            <TouchableOpacity style={styles.deletarBtn} onPress={() => handleDeletarMeta(m.id)}>
+              <Text style={styles.deletarTexto}>×</Text>
+            </TouchableOpacity>
           </View>
         ))}
       </View>
 
       {/* Dívidas */}
-      <View style={styles.secao}>
-        <Text style={styles.tituloSecao}>💳 Dívidas</Text>
-        <InputForm label="Nome da Dívida" value={dividaNome} onChangeText={setDividaNome} />
-        <InputForm label="Valor Original (R$)" value={dividaValor} onChangeText={setDividaValor} keyboardType="decimal-pad" />
-        <InputForm label="Taxa de Juros Mensal (%)" value={dividaJuros} onChangeText={setDividaJuros} keyboardType="decimal-pad" />
-        <InputForm label="Data da Contração" value={dividaData} onChangeText={setDividaData} placeholder="YYYY-MM-DD" />
-        <Botao titulo="Adicionar Dívida" onPress={handleSalvarDivida} cor="#D32F2F" />
+      <View style={styles.secaoCard}>
+        <View style={styles.secaoHeader}>
+          <Text style={styles.secaoIcon}>💳</Text>
+          <Text style={styles.secaoTitulo}>Dívidas</Text>
+        </View>
+        <View style={styles.row}>
+          <View style={styles.rowItem}>
+            <InputForm label="Nome" value={dividaNome} onChangeText={setDividaNome} />
+          </View>
+          <View style={styles.rowItem}>
+            <InputForm label="Valor (R$)" value={dividaValor} onChangeText={setDividaValor} keyboardType="decimal-pad" />
+          </View>
+        </View>
+        <View style={styles.row}>
+          <View style={styles.rowItem}>
+            <InputForm label="Juros Mensal (%)" value={dividaJuros} onChangeText={setDividaJuros} keyboardType="decimal-pad" />
+          </View>
+          <View style={styles.rowItem}>
+            <InputForm label="Data Contração" value={dividaData} onChangeText={setDividaData} placeholder="YYYY-MM-DD" />
+          </View>
+        </View>
+        <Botao titulo="Adicionar Dívida" onPress={handleSalvarDivida} cor="#DC2626" />
 
+        {dividas.length > 0 && <View style={styles.divider} />}
         {dividas.map((d) => {
           const dias = calcularDiasDesde(d.dataContracao);
           const jurosCalculados = calcularJuros(d.valorOriginal || 0, d.taxaJurosMensal || 0, dias);
@@ -160,21 +193,25 @@ export default function MetasDividasScreen() {
 
           return (
             <View key={d.id} style={styles.itemLista}>
-              <View style={{ flex: 1 }}>
+              <View style={[styles.itemIndicador, { backgroundColor: '#DC2626' }]} />
+              <View style={styles.itemCorpo}>
                 <Text style={styles.itemNome}>{d.nome}</Text>
                 <Text style={styles.itemValor}>Original: {formatarMoeda(d.valorOriginal)}</Text>
                 {d.taxaJurosMensal > 0 && (
-                  <>
-                    <Text style={styles.itemDetalhe}>Juros ({dias}d): +{formatarMoeda(jurosCalculados)}</Text>
-                    <Text style={styles.itemTotal}>Total c/ juros: {formatarMoeda(totalComJuros)}</Text>
-                  </>
+                  <Text style={styles.itemDetalhe}>
+                    +{formatarMoeda(jurosCalculados)} juros ({dias}d) → {formatarMoeda(totalComJuros)}
+                  </Text>
                 )}
               </View>
-              <Botao titulo="×" onPress={() => handleDeletarDivida(d.id)} cor="#e53935" />
+              <TouchableOpacity style={styles.deletarBtn} onPress={() => handleDeletarDivida(d.id)}>
+                <Text style={styles.deletarTexto}>×</Text>
+              </TouchableOpacity>
             </View>
           );
         })}
       </View>
+
+      <View style={{ height: 24 }} />
     </ScrollView>
   );
 }
@@ -182,55 +219,110 @@ export default function MetasDividasScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f5',
+    backgroundColor: '#F4F6FB',
+  },
+  content: {
     padding: 16,
   },
-  secao: {
-    marginBottom: 24,
-  },
-  tituloSecao: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#333',
+  secaoCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 18,
     marginBottom: 12,
+    elevation: 2,
+    shadowColor: '#1E1B4B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+  },
+  secaoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  secaoIcon: {
+    fontSize: 20,
+    marginRight: 8,
+  },
+  secaoTitulo: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1E1B4B',
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  rowItem: {
+    flex: 1,
   },
   resultBox: {
-    backgroundColor: '#e8f5e9',
-    borderRadius: 10,
+    backgroundColor: '#FFFBEB',
+    borderRadius: 12,
     padding: 14,
-    marginTop: 8,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    marginTop: 8,
   },
-  resultText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#2E7D32',
+  resultLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#D97706',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 4,
+  },
+  resultValor: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#D97706',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 12,
   },
   itemLista: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 12,
-    marginVertical: 4,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    marginVertical: 4,
+    overflow: 'hidden',
+  },
+  itemIndicador: {
+    width: 4,
+    alignSelf: 'stretch',
+  },
+  itemCorpo: {
+    flex: 1,
+    padding: 12,
   },
   itemNome: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1E1B4B',
+    marginBottom: 2,
   },
   itemValor: {
-    fontSize: 13,
-    color: '#666',
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
   },
   itemDetalhe: {
-    fontSize: 12,
-    color: '#e53935',
+    fontSize: 11,
+    color: '#DC2626',
+    marginTop: 2,
+    fontWeight: '500',
   },
-  itemTotal: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#D32F2F',
+  deletarBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  deletarTexto: {
+    fontSize: 22,
+    color: '#CBD5E1',
+    lineHeight: 26,
   },
 });

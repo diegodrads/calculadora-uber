@@ -7,6 +7,7 @@ export default function Botao({ titulo, onPress, cor = '#6C63FF', disabled = fal
       style={[styles.botao, { backgroundColor: cor }, disabled && styles.desabilitado]}
       onPress={onPress}
       disabled={disabled}
+      activeOpacity={0.8}
     >
       <Text style={styles.texto}>{titulo}</Text>
     </TouchableOpacity>
@@ -15,17 +16,24 @@ export default function Botao({ titulo, onPress, cor = '#6C63FF', disabled = fal
 
 const styles = StyleSheet.create({
   botao: {
-    padding: 14,
-    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 14,
     alignItems: 'center',
     marginVertical: 6,
+    shadowColor: '#1E1B4B',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
   desabilitado: {
-    opacity: 0.5,
+    opacity: 0.45,
   },
   texto: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
+    letterSpacing: 0.2,
   },
 });
