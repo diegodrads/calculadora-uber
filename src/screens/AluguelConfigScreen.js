@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import InputForm from '../components/InputForm';
 import Botao from '../components/Botao';
@@ -8,7 +8,7 @@ import { salvarConfig, listarConfig } from '../storage/database';
 export default function AluguelConfigScreen() {
   const [config, setConfig] = useState({});
   const [valorAluguel, setValorAluguel] = useState('');
-  const [tipoAluguel, setTipoAluguel] = useState('mensal'); // 'semanal' | 'mensal'
+  const [tipoAluguel, setTipoAluguel] = useState('mensal');
   const [valorAluguelDiario, setValorAluguelDiario] = useState('');
   const [combustivelPreco, setCombustivelPreco] = useState('');
   const [combustivelKmL, setCombustivelKmL] = useState('');
@@ -51,32 +51,39 @@ export default function AluguelConfigScreen() {
     }
   }
 
-  return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-      <Text style={styles.titulo}>⚙️ Configurações</Text>
+  const custoPorKm =
+    combustivelPreco && combustivelKmL && parseFloat(combustivelKmL) > 0
+      ? parseFloat(combustivelPreco) / parseFloat(combustivelKmL)
+      : null;
 
-      {/* Aluguel do Carro */}
-      <View style={styles.secao}>
-        <Text style={styles.tituloSecao}>🚗 Aluguel do Carro</Text>
-        <InputForm
-          label="Valor do Aluguel (R$)"
-          value={valorAluguel}
-          onChangeText={setValorAluguel}
-          keyboardType="decimal-pad"
-        />
-        <Text style={styles.label}>Tipo de Cobrança</Text>
-        <View style={styles.opcoes}>
-          <Botao
-            titulo="Semanal"
-            onPress={() => setTipoAluguel('semanal')}
-            cor={tipoAluguel === 'semanal' ? '#9C27B0' : '#ccc'}
-          />
-          <Botao
-            titulo="Mensal"
-            onPress={() => setTipoAluguel('mensal')}
-            cor={tipoAluguel === 'mensal' ? '#9C27B0' : '#ccc'}
-          />
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+
+      {/* Aluguel */}
+      <View style={styles.secaoCard}>
+        <View style={styles.secaoHeader}>
+          <Text style={styles.secaoIcon}>🚗</Text>
+          <Text style={styles.secaoTitulo}>Aluguel do Carro</Text>
         </View>
+
+        <InputForm label="Valor do Aluguel (R$)" value={valorAluguel} onChangeText={setValorAluguel} keyboardType="decimal-pad" />
+
+        <Text style={styles.fieldLabel}>Tipo de Cobrança</Text>
+        <View style={styles.toggleRow}>
+          <TouchableOpacity
+            style={[styles.toggleBtn, tipoAluguel === 'semanal' && styles.toggleBtnAtivo]}
+            onPress={() => setTipoAluguel('semanal')}
+          >
+            <Text style={[styles.toggleTexto, tipoAluguel === 'semanal' && styles.toggleTextoAtivo]}>Semanal</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleBtn, tipoAluguel === 'mensal' && styles.toggleBtnAtivo]}
+            onPress={() => setTipoAluguel('mensal')}
+          >
+            <Text style={[styles.toggleTexto, tipoAluguel === 'mensal' && styles.toggleTextoAtivo]}>Mensal</Text>
+          </TouchableOpacity>
+        </View>
+
         {tipoAluguel === 'semanal' && (
           <InputForm
             label="Valor Diário Equivalente (R$)"
@@ -87,48 +94,55 @@ export default function AluguelConfigScreen() {
         )}
       </View>
 
-      {/* Combustível Padrão */}
-      <View style={styles.secao}>
-        <Text style={styles.tituloSecao}>⛽ Combustível Padrão</Text>
-        <InputForm
-          label="Preço do Combustível (R$/L)"
-          value={combustivelPreco}
-          onChangeText={setCombustivelPreco}
-          keyboardType="decimal-pad"
-        />
-        <InputForm
-          label="Km por Litro"
-          value={combustivelKmL}
-          onChangeText={setCombustivelKmL}
-          keyboardType="decimal-pad"
-        />
-        {combustivelPreco && combustivelKmL && parseFloat(combustivelKmL) > 0 && (
+      {/* Combustível */}
+      <View style={styles.secaoCard}>
+        <View style={styles.secaoHeader}>
+          <Text style={styles.secaoIcon}>⛽</Text>
+          <Text style={styles.secaoTitulo}>Combustível Padrão</Text>
+        </View>
+
+        <View style={styles.row}>
+          <View style={styles.rowItem}>
+            <InputForm label="Preço (R$/L)" value={combustivelPreco} onChangeText={setCombustivelPreco} keyboardType="decimal-pad" />
+          </View>
+          <View style={styles.rowItem}>
+            <InputForm label="Km por Litro" value={combustivelKmL} onChangeText={setCombustivelKmL} keyboardType="decimal-pad" />
+          </View>
+        </View>
+
+        {custoPorKm !== null && (
           <View style={styles.resultBox}>
-            <Text style={styles.resultText}>
-              Custo estimado: R$ {(parseFloat(combustivelPreco) / parseFloat(combustivelKmL)).toFixed(2)}/km
-            </Text>
+            <Text style={styles.resultLabel}>Custo estimado por km</Text>
+            <Text style={styles.resultValor}>R$ {custoPorKm.toFixed(2)}/km</Text>
           </View>
         )}
       </View>
 
       {/* Visibilidade */}
-      <View style={styles.secao}>
-        <Text style={styles.tituloSecao}>👁️ Exibir Aluguel nos Registros</Text>
-        <View style={styles.opcoes}>
-          <Botao
-            titulo="Sim"
+      <View style={styles.secaoCard}>
+        <View style={styles.secaoHeader}>
+          <Text style={styles.secaoIcon}>👁️</Text>
+          <Text style={styles.secaoTitulo}>Exibir Aluguel nos Registros</Text>
+        </View>
+
+        <View style={styles.toggleRow}>
+          <TouchableOpacity
+            style={[styles.toggleBtn, exibirAluguel === 'sim' && styles.toggleBtnAtivo]}
             onPress={() => setExibirAluguel('sim')}
-            cor={exibirAluguel === 'sim' ? '#6C63FF' : '#ccc'}
-          />
-          <Botao
-            titulo="Não"
+          >
+            <Text style={[styles.toggleTexto, exibirAluguel === 'sim' && styles.toggleTextoAtivo]}>Sim</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.toggleBtn, exibirAluguel === 'nao' && styles.toggleBtnAtivo]}
             onPress={() => setExibirAluguel('nao')}
-            cor={exibirAluguel === 'nao' ? '#6C63FF' : '#ccc'}
-          />
+          >
+            <Text style={[styles.toggleTexto, exibirAluguel === 'nao' && styles.toggleTextoAtivo]}>Não</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
       <Botao titulo="Salvar Configurações" onPress={handleSalvar} />
+      <View style={{ height: 24 }} />
     </ScrollView>
   );
 }
@@ -136,45 +150,101 @@ export default function AluguelConfigScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f5',
+    backgroundColor: '#F4F6FB',
+  },
+  content: {
     padding: 16,
   },
-  titulo: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#333',
+  secaoCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: '#1E1B4B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+  },
+  secaoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 16,
   },
-  secao: {
-    marginBottom: 24,
+  secaoIcon: {
+    fontSize: 20,
+    marginRight: 8,
   },
-  tituloSecao: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#333',
+  secaoTitulo: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1E1B4B',
+  },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
     marginBottom: 8,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  opcoes: {
+  toggleRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 14,
+    gap: 4,
   },
-  resultBox: {
-    backgroundColor: '#e8f5e9',
+  toggleBtn: {
+    flex: 1,
+    paddingVertical: 10,
     borderRadius: 10,
-    padding: 14,
-    marginTop: 8,
     alignItems: 'center',
   },
-  resultText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#2E7D32',
+  toggleBtnAtivo: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#1E1B4B',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  toggleTexto: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  toggleTextoAtivo: {
+    color: '#6C63FF',
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  rowItem: {
+    flex: 1,
+  },
+  resultBox: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    marginTop: 4,
+  },
+  resultLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#16A34A',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 4,
+  },
+  resultValor: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#16A34A',
   },
 });

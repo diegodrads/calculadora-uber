@@ -1,18 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 
 export default function InputForm({ label, value, onChangeText, placeholder, keyboardType = 'default', editable = true }) {
+  const [focused, setFocused] = useState(false);
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
-        style={[styles.input, !editable && styles.desabilitado]}
+        style={[
+          styles.input,
+          focused && styles.inputFocused,
+          !editable && styles.desabilitado,
+        ]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
         keyboardType={keyboardType}
         editable={editable}
-        placeholderTextColor="#aaa"
+        placeholderTextColor="#94A3B8"
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
       />
     </View>
   );
@@ -20,24 +28,36 @@ export default function InputForm({ label, value, onChangeText, placeholder, key
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 12,
+    marginBottom: 14,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+    marginBottom: 6,
   },
   input: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 16,
-    color: '#333',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#1E1B4B',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+  },
+  inputFocused: {
+    borderColor: '#6C63FF',
+    shadowColor: '#6C63FF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
   },
   desabilitado: {
-    opacity: 0.6,
+    opacity: 0.5,
+    backgroundColor: '#F8FAFC',
   },
 });

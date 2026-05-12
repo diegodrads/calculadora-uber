@@ -84,51 +84,86 @@ export default function RegistroScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-      <Text style={styles.titulo}>Novo Registro</Text>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      {/* Formulário */}
+      <View style={styles.formCard}>
+        <Text style={styles.formTitulo}>Novo Registro</Text>
 
-      <InputForm label="Data" value={data} onChangeText={setData} placeholder="YYYY-MM-DD" />
-      <InputForm
-        label="Valor Recebido (R$)"
-        value={valorRecebido}
-        onChangeText={setValorRecebido}
-        keyboardType="decimal-pad"
-      />
-      <InputForm label="Km Rodados" value={kmRodados} onChangeText={setKmRodados} keyboardType="decimal-pad" />
-      <InputForm
-        label="Horas Trabalhadas"
-        value={horasTrabalhadas}
-        onChangeText={setHorasTrabalhadas}
-        keyboardType="decimal-pad"
-      />
-      <InputForm
-        label="Custo Variável (R$)"
-        value={custoVariavel}
-        onChangeText={setCustoVariavel}
-        keyboardType="decimal-pad"
-      />
-      <InputForm
-        label="Custo Combustível (R$)"
-        value={custoCombustivel}
-        onChangeText={setCustoCombustivel}
-        keyboardType="decimal-pad"
-      />
-      <InputForm
-        label="Aluguel do Carro (R$)"
-        value={custoAluguel}
-        onChangeText={setCustoAluguel}
-        keyboardType="decimal-pad"
-      />
+        <View style={styles.row}>
+          <View style={styles.rowItem}>
+            <InputForm label="Data" value={data} onChangeText={setData} placeholder="YYYY-MM-DD" />
+          </View>
+          <View style={styles.rowItem}>
+            <InputForm
+              label="Valor Recebido (R$)"
+              value={valorRecebido}
+              onChangeText={setValorRecebido}
+              keyboardType="decimal-pad"
+            />
+          </View>
+        </View>
 
-      <Botao titulo="Salvar Registro" onPress={handleSalvar} />
+        <View style={styles.row}>
+          <View style={styles.rowItem}>
+            <InputForm label="Km Rodados" value={kmRodados} onChangeText={setKmRodados} keyboardType="decimal-pad" />
+          </View>
+          <View style={styles.rowItem}>
+            <InputForm
+              label="Horas Trabalhadas"
+              value={horasTrabalhadas}
+              onChangeText={setHorasTrabalhadas}
+              keyboardType="decimal-pad"
+            />
+          </View>
+        </View>
 
-      <Text style={styles.subtitulo}>Registros Anteriores</Text>
+        <View style={styles.separador} />
+        <Text style={styles.subLabel}>Custos</Text>
+
+        <View style={styles.row}>
+          <View style={styles.rowItem}>
+            <InputForm
+              label="Custo Variável (R$)"
+              value={custoVariavel}
+              onChangeText={setCustoVariavel}
+              keyboardType="decimal-pad"
+            />
+          </View>
+          <View style={styles.rowItem}>
+            <InputForm
+              label="Combustível (R$)"
+              value={custoCombustivel}
+              onChangeText={setCustoCombustivel}
+              keyboardType="decimal-pad"
+            />
+          </View>
+        </View>
+
+        <InputForm
+          label="Aluguel do Carro (R$)"
+          value={custoAluguel}
+          onChangeText={setCustoAluguel}
+          keyboardType="decimal-pad"
+        />
+
+        <Botao titulo="Salvar Registro" onPress={handleSalvar} />
+      </View>
+
+      {/* Histórico */}
+      <Text style={styles.sectionTitle}>Histórico</Text>
+
       {registros.map((r) => (
         <RegistroItem key={r.id} registro={r} onDeletar={handleDeletar} />
       ))}
+
       {registros.length === 0 && (
-        <Text style={styles.vazio}>Nenhum registro encontrado.</Text>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyIcon}>📋</Text>
+          <Text style={styles.emptyTexto}>Nenhum registro encontrado.</Text>
+        </View>
       )}
+
+      <View style={{ height: 24 }} />
     </ScrollView>
   );
 }
@@ -136,25 +171,70 @@ export default function RegistroScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f5',
+    backgroundColor: '#F4F6FB',
+  },
+  content: {
     padding: 16,
   },
-  titulo: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 16,
+  formCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 8,
+    elevation: 3,
+    shadowColor: '#1E1B4B',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
-  subtitulo: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginTop: 24,
+  formTitulo: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1E1B4B',
+    marginBottom: 16,
+    letterSpacing: -0.2,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  rowItem: {
+    flex: 1,
+  },
+  separador: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 12,
+  },
+  subLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#94A3B8',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginTop: 20,
+    marginBottom: 8,
+    marginLeft: 2,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  emptyIcon: {
+    fontSize: 36,
     marginBottom: 8,
   },
-  vazio: {
-    textAlign: 'center',
-    color: '#999',
-    marginTop: 16,
+  emptyTexto: {
+    color: '#94A3B8',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
